@@ -2,11 +2,10 @@
 #include <string>
 #include "glfw3.h"
 #include <iostream>
+
 class Window
 {
 public:
-	
-	
 	Window(int w, int h, std::string n) :width(w), height(h), name(n){}
 	GLFWwindow* getWindow(){
 		
