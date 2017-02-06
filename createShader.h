@@ -18,7 +18,7 @@ public:
 	}
 
 	std::string readFile(const char *filepath);
-
+	void use();
 	void creteVertexShader(const char *vertexFilePath);
 	GLuint getProgramId() const { return shaderId; }
 	void creteFragmentShader(const char *fragmentFilePath);

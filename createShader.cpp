@@ -110,3 +110,11 @@ std::string createShader::readFile(const char *filePath) {
 
 	return sourceCode;
 }
+
+
+void createShader::use() {
+	glUseProgram(shaderId);
+	//glUniform1f(glGetUniformLocation(shader.getProgramId(), "xOffset"), offset);
+	//glUniform3f(glGetUniformLocation(shader.getProgramId(), "test"), offset, offset, offset);
+
+}

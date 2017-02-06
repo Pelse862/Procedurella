@@ -92,11 +92,10 @@ int main()
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
+		shader.use();
 		//use shader items
-		glUseProgram(shader.getProgramId());
 
-		glUniform1f(glGetUniformLocation(shader.getProgramId(), "xOffset"), offset);
-		//glUniform3f(glGetUniformLocation(shader.getProgramId(), "test"), offset, offset, offset);
+	
 		glBindTexture(GL_TEXTURE_2D, tex);
 		
 		
