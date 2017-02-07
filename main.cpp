@@ -2,6 +2,9 @@
 #include "iostream"
 //Vector library
 #include "glm.hpp"
+#include "gtc\matrix_transform.hpp"
+
+#include "gtc\type_ptr.hpp"
 //opengl helps
 #include "glew.h"
 #include "glfw3.h"
@@ -11,7 +14,7 @@
 #include "createShader.h"
 //generate texture using the SOIL library
 #include "Texture.h"
-
+#include "Sphere.h"
 // Define the function's prototype
 
 bool glfwCalls();
@@ -19,25 +22,13 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 bool setWindow(GLFWwindow* w);
 
 
-GLfloat vertices[] = {
-	// Positions          // Colors           // Texture Coords
-	0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // Top Right
-	0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // Bottom Right
-	-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // Bottom Left
-	-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // Top Left 
-};
-GLuint indices[] = {  // Note that we start from 0!
-	0, 1, 3, // First Triangle
-	1, 2, 3  // Second Triangle
-};
-
 int main()
 {
 	if (!glfwCalls())return 0;
-	
+	int WIDTH = 1024, HEIGHT = 768;
 
 	// Open a window and create its OpenGL context
-	Window w(1024, 768, "Procedurellt");
+	Window w(WIDTH, HEIGHT, "Procedurellt");
 	GLFWwindow* window = w.getWindow();
 	if (!setWindow(window))return 0;
 	
@@ -49,67 +40,58 @@ int main()
 	shader.creteVertexShader(vertPath.c_str());
 	shader.detatch();
 	//Generate texture from path
-	Texture T("wall.jpg");
-	GLuint tex = T.generate();
+	Sphere S(0, 0, -3, 0.5f);
 
-	//buffer 
-	GLuint VBO, VAO, EBO;
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
-	glGenBuffers(1, &EBO);
-	glBindVertexArray(VAO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	//matrixes and global variables
+	glm::mat4 projection = glm::perspective(45.f, (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 100.0f);
+	glm::mat4 rot;  
+	GLint projLoc = glGetUniformLocation(shader.getProgramId(), "projection");
+	GLint locationColor = glGetUniformLocation(shader.getProgramId(), "Color");
+	GLint screenWidth = glGetUniformLocation(shader.getProgramId(), "screenWidth");
+	GLint time = glGetUniformLocation(shader.getProgramId(), "time");
+	GLint rotateLoc = glGetUniformLocation(shader.getProgramId(), "rotate");
 
-	// Position attribute
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
-	glEnableVertexAttribArray(0);
-	// Color attribute
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-	glEnableVertexAttribArray(1);
-	// TexCoord attribute
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
-	glEnableVertexAttribArray(2);
-	glBindVertexArray(0); // Unbind VAO
+	float color[] = { 1.0, 0.1, 0.1 };
+	float lastTime = glfwGetTime() - 0.001f;
+	float dT = 0.0;
 
-	GLfloat offset = 0.5f;
-	
-
-	
-	
-	GLfloat timeValue;
 	//Render Here! _/^0_0^\_
 	while (!glfwWindowShouldClose(window))
 	{
 		//get Time for every frame
-		timeValue = glfwGetTime();
-
+		if (dT > 1.f / 30.f) {		
+			lastTime = glfwGetTime();
+		}
+		else {
+			dT = glfwGetTime() - lastTime;
+		}
 		glfwPollEvents();
-		
-		// Render ambient color
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		// Render
+		// Clear the colorbuffer
+		//glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		shader.use();
-		//use shader items
+		rot = glm::rotate(rot, dT*(1.f/30.f), glm::vec3(0.0f, 1.0f, 0.0f));;
+		//send orojection matrix and color
+		glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+		glUniform3fv(locationColor, 1, &color[0]);
+		glUniform1f(screenWidth, WIDTH);
+		glUniform1f(time, dT);
+		glUniformMatrix4fv(rotateLoc, 1, GL_FALSE, glm::value_ptr(rot));
+		//render sphere
+		S.render();
 
-	
-		glBindTexture(GL_TEXTURE_2D, tex);
-		
-		
-		// Draw container
-		glBindVertexArray(VAO);
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 
+		// Swap the screen buffers
 		glfwSwapBuffers(window);
 	}
 
+	// Terminate GLFW, clearing any resources allocated by GLFW.
 	glfwTerminate();
-	
 	return 0;
+
 }
 
 //glfw calls
@@ -120,6 +102,7 @@ bool glfwCalls()
 		fprintf(stderr, "Failed to initialize GLFW\n");
 		return false;
 	}
+	glEnable(GL_DEPTH_TEST);
 	glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // We want OpenGL 3.3
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
