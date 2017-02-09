@@ -40,18 +40,23 @@ int main()
 	shader.creteVertexShader(vertPath.c_str());
 	shader.detatch();
 	//Generate texture from path
-	Sphere S(0, 0, -3, 0.5f);
-
-	//matrixes and global variables
-	glm::mat4 projection = glm::perspective(45.f, (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 100.0f);
+	float rad = 0.3f;
+	Sphere S(0, 0, -4, rad);
+	float altitude = 0.35f;
+	//In varables and Locators
+	glm::mat4 projection = glm::perspective(60.f, (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 10000.0f);
 	glm::mat4 rot;  
-	GLint projLoc = glGetUniformLocation(shader.getProgramId(), "projection");
-	GLint locationColor = glGetUniformLocation(shader.getProgramId(), "Color");
-	GLint screenWidth = glGetUniformLocation(shader.getProgramId(), "screenWidth");
-	GLint time = glGetUniformLocation(shader.getProgramId(), "time");
-	GLint rotateLoc = glGetUniformLocation(shader.getProgramId(), "rotate");
 
-	float color[] = { 1.0, 0.1, 0.1 };
+	GLint locationProjection = glGetUniformLocation(shader.getProgramId(), "projection");
+	GLint locationColorGround = glGetUniformLocation(shader.getProgramId(), "colorGround");
+	GLint locationColorPeaks = glGetUniformLocation(shader.getProgramId(), "colorPeaks");
+	GLint locationAltitude = glGetUniformLocation(shader.getProgramId(), "altitude");
+	GLint locationDepth = glGetUniformLocation(shader.getProgramId(), "depth");
+	GLint locationRotation = glGetUniformLocation(shader.getProgramId(), "rotation");
+
+
+	float colorG[] = { 0.0, 0.0, 1.0 };
+	float colorP[] = { 1.f, 1.0f, 0.0 };
 	float lastTime = glfwGetTime() - 0.001f;
 	float dT = 0.0;
 
@@ -72,13 +77,17 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		shader.use();
-		rot = glm::rotate(rot, dT*(1.f/30.f), glm::vec3(0.0f, 1.0f, 0.0f));;
+		rot = glm::rotate(rot, dT*(1.f/120.f), glm::vec3(0.0f, 1.0f, 0.0f));;
 		//send orojection matrix and color
-		glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
-		glUniform3fv(locationColor, 1, &color[0]);
-		glUniform1f(screenWidth, WIDTH);
-		glUniform1f(time, dT);
-		glUniformMatrix4fv(rotateLoc, 1, GL_FALSE, glm::value_ptr(rot));
+		glUniformMatrix4fv(locationProjection, 1, GL_FALSE, glm::value_ptr(projection));
+		glUniformMatrix4fv(locationRotation, 1, GL_FALSE, glm::value_ptr(rot));
+
+		glUniform3fv(locationColorGround, 1, &colorG[0]);
+		glUniform3fv(locationColorPeaks, 1, &colorP[0]);
+		glUniform1f(locationAltitude, rad);
+		glUniform1f(locationDepth, 1);
+
+
 		//render sphere
 		S.render();
 

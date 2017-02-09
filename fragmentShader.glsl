@@ -6,53 +6,50 @@ layout( location = 0 ) out vec4 FragColor;
 in vec3 Position;
 in vec3 Normal;
 
-uniform vec3 Color;
-uniform float screenWidth;
-uniform float time;
+uniform vec3 colorGround;
+uniform vec3 colorPeaks;
+
+uniform float altitude;
 
 const float shininess = 50.0;
 
+in float elevation;
 
 
-float mod289(float x){return x - floor(x * (1.0 / 289.0)) * 289.0;}
-vec4 mod289(vec4 x){return x - floor(x * (1.0 / 289.0)) * 289.0;}
-vec4 perm(vec4 x){return mod289(((x * 34.0) + 1.0) * x);}
-
-float noise(vec3 p){
-    vec3 a = floor(p);
-    vec3 d = p - a;
-    d = d * d * (3.0 - 2.0 * d);
-
-    vec4 b = a.xxyy + vec4(0.0, 1.0, 0.0, 1.0);
-    vec4 k1 = perm(b.xyxy);
-    vec4 k2 = perm(k1.xyxy + b.zzww);
-
-    vec4 c = k2 + a.zzzz;
-    vec4 k3 = perm(c);
-    vec4 k4 = perm(c + 1.0);
-
-    vec4 o1 = fract(k3 * (1.0 / 41.0));
-    vec4 o2 = fract(k4 * (1.0 / 41.0));
-
-    vec4 o3 = o2 * d.z + o1 * (1.0 - d.z);
-    vec2 o4 = o3.yw * d.x + o3.xz * (1.0 - d.x);
-
-    return o4.y * d.y + o4.x * (1.0 - d.y);
-}
 
 void main () {
 
 	vec3 normal   = normalize(Normal);							
 	vec3 lightDir = normalize(vec3(0.0, 2.0, 0.0) - Position);
 	vec3 viewDir  = normalize(-Position);
-		
+	//vec3 color = Color;	
+	vec3 pos = Position;
 	float lightIntensity = 0.6/length(lightDir);
 	lightDir = normalize(lightDir);
 
 	vec3 white = vec3(1.0, 1.0, 1.0);
 
+	//Diffuse part-----------
+	//float diff = max(dot(lightDir, normal), 0.0);
+	//vec3 diffuse = diff * Color * lightIntensity;
+
+	vec3 C_g = colorGround;
+	vec3 C_p = colorPeaks;
+
+	//specular part-------------
+	//vec3 H = normalize(lightDir + viewDir);
+	//float NdH = max(dot(H, normal), 0.0);
+	//float spec = pow(NdH, shininess);
+	//vec3 specular = spec * white;
+	// Ambient-------------
+	//color = (abs(pos.x)+abs(pos.y)+abs(pos.))>0.25f ? color : vec3(0.f,0.f,1.f) ;
+
+	 //loat middle = step(0.0f, 0.075f, elevation);
+	 vec3 diffuse = elevation <= 0.00 ? C_g : C_p;
+
+
 	
-	FragColor = vec4(resultLight, 1.0);
+	FragColor = vec4(diffuse, 1.0);
 }
 
 
