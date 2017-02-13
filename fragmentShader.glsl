@@ -466,8 +466,12 @@ in vec3 Normal;
 in float elevation;
 in vec3 newPos;
 
-uniform vec3 colorGround;
-uniform vec3 colorPeaks;
+uniform vec3 colorSand;
+uniform vec3 colorGrass;
+uniform vec3 colorWater;
+uniform vec3 colorMountain;
+
+uniform float time;
 uniform float altitude;
 uniform float offset;
 
@@ -488,10 +492,15 @@ void main () {
 	//Diffuse part-----------
 	//float diff = max(dot(lightDir, normal), 0.0);
 	//vec3 diffuse = diff * Color * lightIntensity;
-
-	vec3 C_g = colorGround;
-	vec3 C_p = colorPeaks;
-
+	float noise = 1.f;
+	//1-5
+	for (float i = 1.0; i <= 10; ++i) {
+	  noise += ( 1.0 / pow(i*10.f,i) ) * cnoise(3.f* pos*pow(2.f,i)+offset);
+	}
+	vec3 C_w = colorWater- 0.05f* noise * colorWater;
+	vec3 C_s = colorSand- 0.05f* noise * colorSand;
+	vec3 C_g = colorGrass- 0.15f*noise * colorGrass;
+	vec3 C_m = colorMountain- 0.25f* noise* colorMountain;
 	//specular part-------------
 	//vec3 H = normalize(lightDir + viewDir);
 	//float NdH = max(dot(H, normal), 0.0);
@@ -505,14 +514,22 @@ void main () {
 	float deltaY = abs(newPos.y)-abs(pos.y);
 	float deltaZ = abs(newPos.z)-abs(pos.z);
 	float deltaSum = sqrt(deltaX+deltaY+deltaZ);
-	vec3 diffuse = (deltaSum) < altitude ? C_g : C_p;
+	vec3 diffuse;// = (deltaSum) < altitude ? C_w : C_s;
+	//diffuse = (deltaSum) < altitude+0.05f ? C_s : C_p;
+
 	
-	float noise = 0.f;
-	//1-5
-	for (float i = 1.0; i <= 10; ++i) {
-	  noise += ( 1.0 / pow(i*10.f,i) ) * cnoise(3.f* pos*pow(2.f,i)+offset );
-	}
-	diffuse = diffuse - 0.07f * noise * diffuse*500.f ;
+
+	float water = smoothstep(0.0, 0.1, deltaSum);
+
+	float sand = smoothstep(0.0,0.2,deltaSum);
+
+	float grass = smoothstep(0.2,0.3,deltaSum);
+
+	float mountain = smoothstep(0.2,0.4,deltaSum);
+
+	diffuse = mix(C_w, C_s, water);
+	diffuse = mix(diffuse, C_g, sand);
+	diffuse = mix(diffuse, C_m, mountain);
 
 	FragColor = vec4(diffuse, 1.0);
 }
