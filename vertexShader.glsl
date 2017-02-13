@@ -458,15 +458,16 @@ layout(location = 1) in vec3 VertexNormal;
 
 out vec3 Position;
 out vec3 Normal;
+out float elevation;
+out vec3 newPos;
 
+uniform float offset;
 
 uniform mat4 rotation; 
 uniform mat4 projection;
-uniform int depth;
 uniform float altitude;
 
 
-out float elevation;
 
 
 
@@ -475,14 +476,23 @@ void main ()
 {	
 	Normal = normalize(VertexNormal);
 	vec3 pos = VertexPosition;
+	Position = VertexPosition;
 
-	float elev = 0.0f;
-	for (float i = 1.0; i <= depth; i += 1.0) {
-	  elev += ( 1.0 / pow(i,2) ) * snoise( i * pos);
+	// 1th to (n-1):th octave
+/*	for(float i = 1.0; i < depth; ++i)
+	{
+	elev += 1.0 / (pow(2,i)) * cnoise((i+1.0)*3*(pos + 0.04));
+	}*/
+	//0
+	float elev = 0.f;
+	//1-5
+	for (float i = 1.0; i <= 10; ++i) {
+	  elev += ( 1.0 / pow(i*10.f,i) ) * cnoise(3.f* pos*pow(2.f,i)+offset );
 	}
-
-
-	elevation =   elev; 
-	pos = pos + Normal * elev;
-	gl_Position =  projection*rotation*vec4(pos,1);
+	//elev = elev == 0 ? 0.5f : elev;
+	elevation = elev; 
+	pos = pos + Normal * (elev);
+	//pos = pos < VertexPosition ? VertexPosition : pos;
+	newPos = pos;
+	gl_Position =  rotation*vec4(pos,1);
 }

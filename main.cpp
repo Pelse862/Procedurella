@@ -1,4 +1,4 @@
-
+#define PI 3.14159265359f
 #include "iostream"
 //Vector library
 #include "glm.hpp"
@@ -41,7 +41,7 @@ int main()
 	shader.detatch();
 	//Generate texture from path
 	float rad = 0.3f;
-	Sphere S(0, 0, -4, rad);
+	Sphere S(0, 0, 0, rad);
 	float altitude = 0.35f;
 	//In varables and Locators
 	glm::mat4 projection = glm::perspective(60.f, (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 10000.0f);
@@ -51,15 +51,15 @@ int main()
 	GLint locationColorGround = glGetUniformLocation(shader.getProgramId(), "colorGround");
 	GLint locationColorPeaks = glGetUniformLocation(shader.getProgramId(), "colorPeaks");
 	GLint locationAltitude = glGetUniformLocation(shader.getProgramId(), "altitude");
-	GLint locationDepth = glGetUniformLocation(shader.getProgramId(), "depth");
 	GLint locationRotation = glGetUniformLocation(shader.getProgramId(), "rotation");
+	GLint locationOffset = glGetUniformLocation(shader.getProgramId(), "offset");
 
-
-	float colorG[] = { 0.0, 0.0, 1.0 };
-	float colorP[] = { 1.f, 1.0f, 0.0 };
+	
+	float colorG[] = { 1.f, 1.0f, 0.0 };
+	float colorP[] = { 0.0, 0.0, 1.0 };
 	float lastTime = glfwGetTime() - 0.001f;
 	float dT = 0.0;
-
+	float offset = 0.01f;
 	//Render Here! _/^0_0^\_
 	while (!glfwWindowShouldClose(window))
 	{
@@ -77,7 +77,7 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		shader.use();
-		rot = glm::rotate(rot, dT*(1.f/120.f), glm::vec3(0.0f, 1.0f, 0.0f));;
+		rot = glm::rotate(rot, dT *(1.f/120.f), glm::vec3(0.0f, 1.0f, 0.0f));
 		//send orojection matrix and color
 		glUniformMatrix4fv(locationProjection, 1, GL_FALSE, glm::value_ptr(projection));
 		glUniformMatrix4fv(locationRotation, 1, GL_FALSE, glm::value_ptr(rot));
@@ -85,7 +85,7 @@ int main()
 		glUniform3fv(locationColorGround, 1, &colorG[0]);
 		glUniform3fv(locationColorPeaks, 1, &colorP[0]);
 		glUniform1f(locationAltitude, rad);
-		glUniform1f(locationDepth, 1);
+		glUniform1f(offset, 5);
 
 
 		//render sphere
