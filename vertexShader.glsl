@@ -461,11 +461,11 @@ out vec3 Normal;
 out float elevation;
 out vec3 newPos;
 
+uniform float DistanceFromScreen;
 uniform float offset;
-
+uniform float divider;
 uniform mat4 rotation; 
 uniform mat4 projection;
-uniform float altitude;
 
 
 
@@ -486,13 +486,15 @@ void main ()
 	//0
 	float elev = 0.f;
 	//1-5
-	for (float i = 1.0; i <= 10; ++i) {
-	  elev += ( 1.0 / pow(i*10.f,i) ) * cnoise(3.f* pos*pow(2.f,i)+offset );
+	for (float i = 1.0; i <= 20; ++i) {
+	  elev += ( 1.0 / pow(i*divider,i) ) * cnoise(3.f* pos*pow(2.f,i)+offset );
 	}
 	//elev = elev == 0 ? 0.5f : elev;
 	elevation = elev; 
 	pos = pos + Normal * (elev);
 	//pos = pos < VertexPosition ? VertexPosition : pos;
 	newPos = pos;
-	gl_Position =  rotation*vec4(pos,1);
+  vec4 posOut = vec4(pos,1)*rotation;
+  posOut.z-=DistanceFromScreen;
+	gl_Position =  projection*posOut;
 }
