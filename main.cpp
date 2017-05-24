@@ -28,7 +28,7 @@ bool setWindow(GLFWwindow* w);
 int main()
 {
 	if (!glCalls())return 0;
-	int WIDTH = 1024, HEIGHT = 768;
+	int WIDTH = 1200, HEIGHT = 900;
 
 	// Open a window and create its OpenGL context
 	Window w(WIDTH, HEIGHT, "Procedurellt");
@@ -36,22 +36,34 @@ int main()
 	if (!setWindow(window))return 0;
 	ImGui_ImplGlfwGL3_Init(window, true);
 
-	//shader 1
+	//shader 1, Planet
 	createShader PlanetShader;
-	std::string vertPath = "C:/Users/Commando/Documents/Projects/Procedurella/vertexShader.glsl";
-	std::string fragPath = "C:/Users/Commando/Documents/Projects/Procedurella/fragmentShader.glsl";
+	std::string vertPath = "C:/Users/Commando/Documents/Projects/Procedurella/PlanetShaderVert.glsl";
+	std::string fragPath = "C:/Users/Commando/Documents/Projects/Procedurella/PlanetShaderFrag.glsl";
 	PlanetShader.creteFragmentShader(fragPath.c_str());
 	PlanetShader.creteVertexShader(vertPath.c_str());
 	PlanetShader.detatch();
-	//Generate texture from path
-	float rad = 0.4f;
-	Sphere Planet(0.f, 0.f, 0, rad);
+	//shader 2, Cloud
+	createShader CloudShader;
+	vertPath = "C:/Users/Commando/Documents/Projects/Procedurella/CloudShaderVert.glsl";
+	fragPath = "C:/Users/Commando/Documents/Projects/Procedurella/CloudShaderFrag.glsl";
+	CloudShader.creteFragmentShader(fragPath.c_str());
+	CloudShader.creteVertexShader(vertPath.c_str());
+	CloudShader.detatch();
+	//Generate Panet
+	float radPlanet = 0.4f;
+	Sphere Planet(0.f, 0.f, 0.f, radPlanet);
+	//Generate Panet
+	float radCloud = 0.45f;
+	Sphere Cloud(0.f, 0.f, 0.f, radCloud);
 
-	float altitude = 0.35f;
+	
 	//In varables and Locators
 	glm::mat4 projection = glm::perspective(100.f, float(WIDTH)/ float(HEIGHT), 0.1f, 10000.0f);
-	glm::mat4 rot(1.f);  
+	glm::mat4 rotationPlanet(1.f); 
+	glm::mat4 rotationCloud(1.f);
 
+	//shader 1
 	GLint locationProjection = glGetUniformLocation(PlanetShader.getProgramId(), "projection");
 	GLint locationColorGround = glGetUniformLocation(PlanetShader.getProgramId(), "colorSand");
 	GLint locationColorPeaks = glGetUniformLocation(PlanetShader.getProgramId(), "colorGrass");
@@ -62,6 +74,12 @@ int main()
 	GLint locationOffset = glGetUniformLocation(PlanetShader.getProgramId(), "offset");
 	GLint locationDistanceFromScreen = glGetUniformLocation(PlanetShader.getProgramId(), "DistanceFromScreen");
 
+	//shader 2
+	GLint locationProjectionCloud = glGetUniformLocation(CloudShader.getProgramId(), "projection");
+	GLint locationDividerCloud = glGetUniformLocation(CloudShader.getProgramId(), "divider");
+	GLint locationDistanceFromScreenCloud = glGetUniformLocation(CloudShader.getProgramId(), "DistanceFromScreen");
+	GLint locationAlphaCloud = glGetUniformLocation(CloudShader.getProgramId(), "BaseAlpha");
+	GLint locationRotationCloud = glGetUniformLocation(CloudShader.getProgramId(), "rotation");
 	//gul, bkå, grön
 	float colorS[] = { 1.f, 1.0f, 0.0 };
 	float colorP[] = { 0.0, 1.0, 0.0 };
@@ -72,11 +90,18 @@ int main()
 	float dT = 0.0;
 	
 
-	//Imgui variables
+	//Imgui variables shader 1
 	float offset = 0.01f;
 	float denomMulti = 10.f;
-	float rotations[2] = { 0.f };
+	float planetRotations[2] = { 0.f };
+	float cloudRotations[2] = { 0.f };
+
 	float dist = 2;
+	//shader 2
+	bool useCloud = false;
+	bool inheritRotation = true;
+	float baseAlpha = 0.01f;
+
 	//Render Here
 	while (!glfwWindowShouldClose(window))
 	{
@@ -91,13 +116,23 @@ int main()
 		// GUI
 		ImGui_ImplGlfwGL3_NewFrame();
 		{
-			ImGui::Text("stuff");
+			if (ImGui::BeginMenu("Planet")) {
+			ImGui::Text("Planet stuff");
 			ImGui::SliderFloat("Offset: ", &offset, 0.f, 100.f);
 			ImGui::SliderFloat("Divider: ", &denomMulti, 2.f, 100.f);
-			ImGui::SliderFloat("RotateX: ", &rotations[0], -0.1f, 0.1f);
-			ImGui::SliderFloat("RotateY: ", &rotations[1], -0.1f, 0.1f);
+			ImGui::SliderFloat("RotateX: ", &planetRotations[0], -0.1f, 0.1f);
+			ImGui::SliderFloat("RotateY: ", &planetRotations[1], -0.1f, 0.1f);
 			ImGui::SliderFloat("DistanceFromViewport: ", &dist, 0.f, 4.f);
+			ImGui::EndMenu();
+			}
+			if (ImGui::BeginMenu("Cloud")) {
+				ImGui::Text("Cloud stuff");
+				ImGui::Checkbox("Use Clouds", &useCloud);
+				ImGui::SliderFloat("Thickness: ", &baseAlpha, 0.f, 0.8f);
+				ImGui::Checkbox("Use PlanetRotation", &inheritRotation);
 
+				ImGui::EndMenu();
+			}
 		}
 		//
 		// Clear the colorbuffer
@@ -105,12 +140,12 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		PlanetShader.use();
-		rot = glm::rotate(rot, rotations[0] * dT , glm::vec3(1.0f, 0.0f, 0.0f));
-		rot = glm::rotate(rot, rotations[1] * dT, glm::vec3(0.0f, 1.0f, 0.0f));
+		rotationPlanet = glm::rotate(rotationPlanet, planetRotations[0] * dT , glm::vec3(1.0f, 0.0f, 0.0f));
+		rotationPlanet = glm::rotate(rotationPlanet, planetRotations[1] * dT, glm::vec3(0.0f, 1.0f, 0.0f));
 
 		//send orojection matrix and color
 		glUniformMatrix4fv(locationProjection, 1, GL_FALSE, glm::value_ptr(projection));
-		glUniformMatrix4fv(locationRotation, 1, GL_FALSE, glm::value_ptr(rot));
+		glUniformMatrix4fv(locationRotation, 1, GL_FALSE, glm::value_ptr(rotationPlanet));
 		// colors of the different levels
 		glUniform3fv(locationColorGround, 1, &colorS[0]);
 		glUniform3fv(locationColorPeaks, 1, &colorP[0]);
@@ -121,13 +156,32 @@ int main()
 		glUniform1f(locationDivider, denomMulti);
 		glUniform1f(locationOffset, offset);
 		glUniform1f(locationDistanceFromScreen, dist);
-
-		
 		//render sphere
 		Planet.render();
-
 		glBindVertexArray(0);
-		
+		if (useCloud)
+		{
+			
+			CloudShader.use();
+			glUniformMatrix4fv(locationProjectionCloud, 1, GL_FALSE, glm::value_ptr(projection));
+			glUniform1f(locationDividerCloud, 5);
+			glUniform1f(locationDistanceFromScreenCloud, dist);
+			glUniform1f(locationAlphaCloud, baseAlpha);
+			if (inheritRotation) {
+				glUniformMatrix4fv(locationRotationCloud, 1, GL_FALSE, glm::value_ptr(rotationCloud));
+			}
+			else
+			{
+				rotationCloud = glm::rotate(rotationCloud, cloudRotations[0] * dT, glm::vec3(1.0f, 0.0f, 0.0f));
+				rotationCloud = glm::rotate(rotationCloud, cloudRotations[1] * dT, glm::vec3(0.0f, 1.0f, 0.0f));
+				glUniformMatrix4fv(locationRotationCloud, 1, GL_FALSE, glm::value_ptr(rotationCloud));
+			}
+			Cloud.render();
+			glBindVertexArray(0);
+
+		}
+
+
 		int display_w, display_h;
 		glfwGetFramebufferSize(window, &display_w, &display_h);
 		glViewport(0, 0, display_w, display_h);
@@ -164,7 +218,7 @@ bool glCalls()
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glEnable(GL_ALPHA_TEST);
 	glEnable(GL_BLEND);
-	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	return true;
 }
 

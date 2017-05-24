@@ -466,72 +466,18 @@ in vec3 Normal;
 in float elevation;
 in vec3 newPos;
 
-uniform vec3 colorSand;
-uniform vec3 colorGrass;
-uniform vec3 colorWater;
-uniform vec3 colorMountain;
+uniform float BaseAlpha;
 
-uniform float time;
-uniform float altitude;
-uniform float offset;
-
-const float shininess = 50.0;
+uniform float  divider;
 
 void main () {
 
-	vec3 normal   = normalize(Normal);							
-	vec3 lightDir = normalize(vec3(0.0, 2.0, 0.0) - Position);
-	vec3 viewDir  = normalize(-Position);
-	//vec3 color = Color;	
-	vec3 pos = Position;
-	float lightIntensity = 0.6/length(lightDir);
-	lightDir = normalize(lightDir);
+  float alpha = BaseAlpha;
+  for (float i = 1.0; i <= 10; ++i) {
+    alpha += ( 1.0 / pow(i*divider,i) ) * cnoise(3.f* Position*pow(2.f,i) );
+  }
 
-	vec3 white = vec3(1.0, 1.0, 1.0);
-
-	//Diffuse part-----------
-	//float diff = max(dot(lightDir, normal), 0.0);
-	//vec3 diffuse = diff * Color * lightIntensity;
-	float noise = 1.f;
-	//1-5
-	for (float i = 1.0; i <= 10; ++i) {
-	  noise += ( 1.0 / pow(i*10.f,i) ) * cnoise(3.f* pos*pow(2.f,i)+offset);
-	}
-	vec3 C_w = colorWater- 0.05f* noise * colorWater;
-	vec3 C_s = colorSand- 0.05f* noise * colorSand;
-	vec3 C_g = colorGrass- 0.15f*noise * colorGrass;
-	vec3 C_m = colorMountain- 0.25f* noise* colorMountain;
-	//specular part-------------
-	//vec3 H = normalize(lightDir + viewDir);
-	//float NdH = max(dot(H, normal), 0.0);
-	//float spec = pow(NdH, shininess);
-	//vec3 specular = spec * white;
-	// Ambient-------------
-	//color = (abs(pos.x)+abs(pos.y)+abs(pos.))>0.25f ? color : vec3(0.f,0.f,1.f) ;
-
-	 //loat middle = step(0.0f, 0.075f, elevation);
-	float deltaX = abs(newPos.x)-abs(pos.x);
-	float deltaY = abs(newPos.y)-abs(pos.y);
-	float deltaZ = abs(newPos.z)-abs(pos.z);
-	float deltaSum = sqrt(deltaX+deltaY+deltaZ);
-	vec3 diffuse;// = (deltaSum) < altitude ? C_w : C_s;
-	//diffuse = (deltaSum) < altitude+0.05f ? C_s : C_p;
-
-	
-
-	float water = smoothstep(0.0, 0.1, deltaSum);
-
-	float sand = smoothstep(0.0,0.2,deltaSum);
-
-	float grass = smoothstep(0.2,0.3,deltaSum);
-
-	float mountain = smoothstep(0.2,0.4,deltaSum);
-
-	diffuse = mix(C_w, C_s, water);
-	diffuse = mix(diffuse, C_g, sand);
-	diffuse = mix(diffuse, C_m, mountain);
-
-	FragColor = vec4(diffuse, 1.0);
+	FragColor = vec4(1,1,1, alpha);
 }
 
 
