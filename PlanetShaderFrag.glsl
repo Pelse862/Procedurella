@@ -463,7 +463,7 @@ layout( location = 0 ) out vec4 FragColor;
 
 in vec3 Position;
 in vec3 Normal;
-in float elevation;
+
 in vec3 newPos;
 
 uniform vec3 colorSand;
@@ -490,15 +490,16 @@ void main () {
 	//Diffuse part-----------
 	//float diff = max(dot(lightDir, normal), 0.0);
 	//vec3 diffuse = diff * Color * lightIntensity;
-	float noise = 1.f;
+	float noise = 0.2f;
 	//1-5
 	for (float i = 1.0; i <= 10; ++i) {
-	  noise += ( 1.0 / pow(i*10.f,i) ) * cnoise(3.f* pos*pow(2.f,i)+offset);
+	  noise +=( 1.0 / pow(i*10,i/1.03) ) * cnoise(3.f* pos*pow(2.f,i)+offset );
+    
 	}
-	vec3 C_w = colorWater- 0.05f* noise * colorWater;
-	vec3 C_s = colorSand- 0.05f* noise * colorSand;
-	vec3 C_g = colorGrass- 0.15f*noise * colorGrass;
-	vec3 C_m = colorMountain- 0.25f* noise* colorMountain;
+	vec3 C_w = colorWater- 4.5f* noise * colorWater;
+	vec3 C_s = colorSand- 3.5f* noise * colorSand;
+	vec3 C_g = colorGrass- 2.5f*noise * colorGrass;
+	vec3 C_m = colorMountain- 1.5f* noise* colorMountain;
 	//specular part-------------
 	//vec3 H = normalize(lightDir + viewDir);
 	//float NdH = max(dot(H, normal), 0.0);
@@ -512,10 +513,7 @@ void main () {
 	float deltaY = abs(newPos.y)-abs(pos.y);
 	float deltaZ = abs(newPos.z)-abs(pos.z);
 	float deltaSum = sqrt(deltaX+deltaY+deltaZ);
-	vec3 diffuse;// = (deltaSum) < altitude ? C_w : C_s;
-	//diffuse = (deltaSum) < altitude+0.05f ? C_s : C_p;
 
-	
 
 	float water = smoothstep(0.0, 0.1, deltaSum);
 
@@ -525,7 +523,7 @@ void main () {
 
 	float mountain = smoothstep(0.2,0.4,deltaSum);
 
-	diffuse = mix(C_w, C_s, water);
+	vec3 diffuse = mix(C_w, C_s, water);
 	diffuse = mix(diffuse, C_g, sand);
 	diffuse = mix(diffuse, C_m, mountain);
 

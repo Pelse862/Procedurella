@@ -461,7 +461,7 @@ out vec3 Normal;
 
 
 uniform mat4 rotation; 
-
+uniform float Radius;
 uniform float DistanceFromScreen;
 uniform mat4 projection;
 
@@ -472,8 +472,12 @@ void main ()
 	vec3 pos = VertexPosition;
 	Position = VertexPosition;
 
+  vec4 posOut=vec4(pos,1);
 
-  vec4 posOut = vec4(pos,1)*rotation;
+  posOut.xyz += Normal*Radius;
+
+  posOut *= rotation;
   posOut.z-=DistanceFromScreen;
+
 	gl_Position =  projection*posOut;
 }

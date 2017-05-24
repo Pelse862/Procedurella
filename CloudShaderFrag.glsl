@@ -476,8 +476,13 @@ void main () {
   for (float i = 1.0; i <= 10; ++i) {
     alpha += ( 1.0 / pow(i*divider,i) ) * cnoise(3.f* Position*pow(2.f,i) );
   }
-
-	FragColor = vec4(1,1,1, alpha);
+  vec3 cloudColor = vec3(1,1,1);
+  float colorNoise = 0.7;
+  for (float i = 1.0; i <= 5; ++i) {
+    colorNoise += ( 1.0 / pow(i*divider,i+1) ) * cnoise(3.f* Position*pow(2.f,i) );
+  }
+  cloudColor*=colorNoise;
+	FragColor = vec4(cloudColor, alpha);
 }
 
 

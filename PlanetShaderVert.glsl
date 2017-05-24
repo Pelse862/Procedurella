@@ -466,7 +466,7 @@ uniform float offset;
 uniform float divider;
 uniform mat4 rotation; 
 uniform mat4 projection;
-
+uniform int NoiseType;
 
 
 
@@ -486,9 +486,19 @@ void main ()
 	//0
 	float elev = 0.f;
 	//1-5
-	for (float i = 1.0; i <= 20; ++i) {
-	  elev += ( 1.0 / pow(i*divider,i) ) * cnoise(3.f* pos*pow(2.f,i)+offset );
-	}
+  if(NoiseType == 0)
+  {
+  	for (float i = 1.0; i <= 20; ++i) {
+      elev += ( 1.0 / pow(i*divider,i/1.03) ) * cnoise(3.f* pos*pow(2.f,i)+offset );
+  	}
+  }
+  else if(NoiseType == 1)
+  {
+    for (float i = 1.0; i <= 20; ++i) {
+      elev += ( 1.0 / pow(i*divider,i*5) ) * cellular(3.f* pos*pow(2.f,i)+offset ).x;
+    }
+  }
+
 	//elev = elev == 0 ? 0.5f : elev;
 	elevation = elev; 
 	pos = pos + Normal * (elev);

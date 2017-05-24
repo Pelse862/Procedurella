@@ -73,6 +73,7 @@ int main()
 	GLint locationRotation = glGetUniformLocation(PlanetShader.getProgramId(), "rotation");
 	GLint locationOffset = glGetUniformLocation(PlanetShader.getProgramId(), "offset");
 	GLint locationDistanceFromScreen = glGetUniformLocation(PlanetShader.getProgramId(), "DistanceFromScreen");
+	GLint locationNoise = glGetUniformLocation(PlanetShader.getProgramId(), "NoiseType");
 
 	//shader 2
 	GLint locationProjectionCloud = glGetUniformLocation(CloudShader.getProgramId(), "projection");
@@ -80,6 +81,8 @@ int main()
 	GLint locationDistanceFromScreenCloud = glGetUniformLocation(CloudShader.getProgramId(), "DistanceFromScreen");
 	GLint locationAlphaCloud = glGetUniformLocation(CloudShader.getProgramId(), "BaseAlpha");
 	GLint locationRotationCloud = glGetUniformLocation(CloudShader.getProgramId(), "rotation");
+	GLint locationRadiusCloud = glGetUniformLocation(CloudShader.getProgramId(), "Radius");
+
 	//gul, bkå, grön
 	float colorS[] = { 1.f, 1.0f, 0.0 };
 	float colorP[] = { 0.0, 1.0, 0.0 };
@@ -95,14 +98,17 @@ int main()
 	float denomMulti = 10.f;
 	float planetRotations[2] = { 0.f };
 	float cloudRotations[2] = { 0.f };
-
+	bool selected[2] = { true,false };
+	int whoorley = 0;
 	float dist = 2;
 	//shader 2
 	bool useCloud = false;
 	bool inheritRotation = true;
 	float baseAlpha = 0.01f;
-
+	float cloudMulti = 5;
+	float cloudRadius = radCloud;
 	//Render Here
+	bool GlLine = false;
 	while (!glfwWindowShouldClose(window))
 	{
 		//get Time for every frame
@@ -123,16 +129,50 @@ int main()
 			ImGui::SliderFloat("RotateX: ", &planetRotations[0], -0.1f, 0.1f);
 			ImGui::SliderFloat("RotateY: ", &planetRotations[1], -0.1f, 0.1f);
 			ImGui::SliderFloat("DistanceFromViewport: ", &dist, 0.f, 4.f);
+			ImGui::Selectable("1. Classic Perlin noise", &selected[0]);
+			ImGui::Selectable("1. Cellular noise", &selected[1]);
+			if (selected[0]) { selected[1] = false; }
+			else { selected[1] = true; }
+			if (ImGui::BeginMenu("Colors"))
+			{
+				ImGui::Text("Choose yout colors");
+				ImGui::Text("set  color lowest level");
+				ImGui::ColorEdit3("color 1", colorW);
+				ImGui::Text("set color first middle level");
+				ImGui::ColorEdit3("color 2", colorS);
+				ImGui::Text("set color second middle level");
+				ImGui::ColorEdit3("color 3", colorP);
+				ImGui::Text("set color last middle level");
+				ImGui::ColorEdit3("color 4", colorM);
+				ImGui::EndMenu();
+
+			}
+
 			ImGui::EndMenu();
 			}
 			if (ImGui::BeginMenu("Cloud")) {
 				ImGui::Text("Cloud stuff");
 				ImGui::Checkbox("Use Clouds", &useCloud);
 				ImGui::SliderFloat("Thickness: ", &baseAlpha, 0.f, 0.8f);
+				ImGui::SliderFloat("Divider: ", &cloudMulti, 0.1f, 100.f);
+				ImGui::SliderFloat("RotateX: ", &cloudRotations[0], -0.1f, 0.1f);
+				ImGui::SliderFloat("RotateY: ", &cloudRotations[1], -0.1f, 0.1f);
 				ImGui::Checkbox("Use PlanetRotation", &inheritRotation);
-
+				ImGui::SliderFloat("Positionscaling", &cloudRadius,-0.3f,1.0f);
+				
 				ImGui::EndMenu();
 			}
+			ImGui::Checkbox("Render as Lines", &GlLine);
+
+		}
+		if (GlLine)
+		{
+			
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		}
+		else
+		{
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		}
 		//
 		// Clear the colorbuffer
@@ -151,7 +191,14 @@ int main()
 		glUniform3fv(locationColorPeaks, 1, &colorP[0]);
 		glUniform3fv(locationColorWater, 1, &colorW[0]);
 		glUniform3fv(locationColorMountain, 1, &colorM[0]);
-
+		if (selected[0])
+		{
+			glUniform1i(locationNoise, 0);
+		}
+		else
+		{
+			glUniform1i(locationNoise, 1);
+		}
 		//some noise and placment stuff
 		glUniform1f(locationDivider, denomMulti);
 		glUniform1f(locationOffset, offset);
@@ -161,14 +208,18 @@ int main()
 		glBindVertexArray(0);
 		if (useCloud)
 		{
-			
+			glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	
 			CloudShader.use();
 			glUniformMatrix4fv(locationProjectionCloud, 1, GL_FALSE, glm::value_ptr(projection));
-			glUniform1f(locationDividerCloud, 5);
+			
+			glUniform1f(locationDividerCloud, cloudMulti);
 			glUniform1f(locationDistanceFromScreenCloud, dist);
-			glUniform1f(locationAlphaCloud, baseAlpha);
+			glUniform1f(locationAlphaCloud, baseAlpha); 
+			glUniform1f(locationRadiusCloud, cloudRadius);
+
 			if (inheritRotation) {
-				glUniformMatrix4fv(locationRotationCloud, 1, GL_FALSE, glm::value_ptr(rotationCloud));
+				glUniformMatrix4fv(locationRotationCloud, 1, GL_FALSE, glm::value_ptr(rotationPlanet));
 			}
 			else
 			{
@@ -208,17 +259,18 @@ bool glCalls()
 		return false;
 	}
 	
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 	glEnable(GL_DEPTH_TEST);
 	//glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
+	glCullFace(GL_FRONT);
 	glDisable(GL_TEXTURE);
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glEnable(GL_ALPHA_TEST);
-	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	return true;
 }
 
